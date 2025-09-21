@@ -1,0 +1,88 @@
+🔹 1. Main Structure
+struct ContentView: View {
+    @State private var leftDie = 1
+    @State private var rightDie = 1
+    @State private var isRolling = false
+    @State private var rotationAmount: Double = 0
+    @State private var scaleAmount: CGFloat = 1
+    @State private var audioPlayer: AVAudioPlayer?
+leftDie & rightDie → current values of the two dice (1–6).
+isRolling → prevents multiple rolls at once.
+rotationAmount & scaleAmount → control animation (dice spin & size).
+audioPlayer → plays dice roll sound.
+🔹 2. UI Layout
+ZStack {
+    LinearGradient(...) // background
+    VStack(spacing: 36) {
+        Text("Dice Roller") // title
+        HStack(spacing: 24) {
+            DieView(number: leftDie) // left die
+            DieView(number: rightDie) // right die
+        }
+        Button(action: { Task { await rollDice() } }) { ... }
+        Spacer()
+    }
+}
+Background: gradient (Apple feel).
+Title: big bold text.
+Dice: two DieViews side by side.
+Button: starts the roll (async function).
+Spacer() pushes things down.
+🔹 3. Animations
+DieView(number: leftDie)
+    .rotationEffect(.degrees(rotationAmount))
+    .scaleEffect(scaleAmount)
+    .animation(.spring(...), value: rotationAmount)
+rotationEffect → dice spins.
+scaleEffect → dice grows/shrinks slightly.
+spring animation → smooth bounce effect.
+🔹 4. Rolling Logic
+func rollDice() async {
+    guard !isRolling else { return }
+    isRolling = true
+
+    for i in 0..<10 {
+        rotationAmount = Double.random(in: 200...720) * (i.isMultiple(of: 2) ? 1 : -1)
+        scaleAmount = CGFloat(Double.random(in: 0.9...1.12))
+
+        leftDie = Int.random(in: 1...6)
+        rightDie = Int.random(in: 1...6)
+        try? await Task.sleep(nanoseconds: 70_000_000) // 70ms delay
+    }
+
+    rotationAmount = 0
+    scaleAmount = 1
+    leftDie = Int.random(in: 1...6)
+    rightDie = Int.random(in: 1...6)
+    isRolling = false
+}
+Loops 10 times to simulate dice shuffle.
+Each loop → changes rotation, scale, and dice numbers randomly.
+After loop → final roll result shown.
+Task.sleep → creates a small delay between frames = animation.
+🔹 5. Sound + Haptics
+let generator = UIImpactFeedbackGenerator(style: .medium)
+generator.impactOccurred()
+audioPlayer?.play()
+Haptics → small vibration when rolling.
+Sound → optional dice-roll.wav sound plays if added to app bundle.
+🔹 6. DieView (Dice Face)
+struct DieView: View {
+    let number: Int
+    ZStack {
+        RoundedRectangle(...) // dice background
+        pipRows(for: number)  // pips (dots)
+    }
+}
+Background → rounded rectangle (glass material).
+Inside → draws correct dots (pips) for number 1–6 using helper functions like CenterPip(), LeadingPip(), etc.
+🔹 7. Preview
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+            .preferredColorScheme(.dark)
+            .previewDevice("iPhone 14")
+    }
+}
+Lets you preview the dice in Xcode canvas.
+Dark mode enabled for Apple-polished look.
